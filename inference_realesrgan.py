@@ -8,6 +8,7 @@ from realesrgan import RealESRGANer
 
 
 def main():
+    # ----- 各种参数 -----
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', type=str, default='inputs', help='Input image or folder')
     parser.add_argument(

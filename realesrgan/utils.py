@@ -21,7 +21,7 @@ class RealESRGANer():
         self.mod_scale = None
         self.half = half
 
-        # initialize model
+        # initialize model | 初始化模型
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         if model is None:
             model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=scale)
@@ -40,6 +40,7 @@ class RealESRGANer():
         if self.half:
             self.model = self.model.half()
 
+    # 预处理函数
     def pre_process(self, img):
         img = torch.from_numpy(np.transpose(img, (2, 0, 1))).float()
         self.img = img.unsqueeze(0).to(self.device)
@@ -63,9 +64,11 @@ class RealESRGANer():
                 self.mod_pad_w = (self.mod_scale - w % self.mod_scale)
             self.img = F.pad(self.img, (0, self.mod_pad_w, 0, self.mod_pad_h), 'reflect')
 
+    # 正式进行处理的函数
     def process(self):
         self.output = self.model(self.img)
 
+    # 瓦片处理
     def tile_process(self):
         """Modified from: https://github.com/ata4/esrgan-launcher
         """
@@ -74,36 +77,36 @@ class RealESRGANer():
         output_width = width * self.scale
         output_shape = (batch, channel, output_height, output_width)
 
-        # start with black image
+        # start with black image | 以纯黑色图像开始
         self.output = self.img.new_zeros(output_shape)
         tiles_x = math.ceil(width / self.tile_size)
         tiles_y = math.ceil(height / self.tile_size)
 
-        # loop over all tiles
+        # loop over all tiles | 循环所有瓦片
         for y in range(tiles_y):
             for x in range(tiles_x):
-                # extract tile from input image
+                # extract tile from input image | 从输入图像中释放瓦片
                 ofs_x = x * self.tile_size
                 ofs_y = y * self.tile_size
-                # input tile area on total image
+                # input tile area on total image | 在整个图像上输入瓦片区域
                 input_start_x = ofs_x
                 input_end_x = min(ofs_x + self.tile_size, width)
                 input_start_y = ofs_y
                 input_end_y = min(ofs_y + self.tile_size, height)
 
-                # input tile area on total image with padding
+                # input tile area on total image with padding | 在填充过的整个图像上输入瓦片区域
                 input_start_x_pad = max(input_start_x - self.tile_pad, 0)
                 input_end_x_pad = min(input_end_x + self.tile_pad, width)
                 input_start_y_pad = max(input_start_y - self.tile_pad, 0)
                 input_end_y_pad = min(input_end_y + self.tile_pad, height)
 
-                # input tile dimensions
+                # input tile dimensions | 输入瓦片维度信息
                 input_tile_width = input_end_x - input_start_x
                 input_tile_height = input_end_y - input_start_y
                 tile_idx = y * tiles_x + x + 1
                 input_tile = self.img[:, :, input_start_y_pad:input_end_y_pad, input_start_x_pad:input_end_x_pad]
 
-                # upscale tile
+                # upscale tile | 放大瓦片
                 try:
                     with torch.no_grad():
                         output_tile = self.model(input_tile)
@@ -111,29 +114,29 @@ class RealESRGANer():
                     print('Error', error)
                 print(f'\tTile {tile_idx}/{tiles_x * tiles_y}')
 
-                # output tile area on total image
+                # output tile area on total image | 在整个图像上输出瓦片区域
                 output_start_x = input_start_x * self.scale
                 output_end_x = input_end_x * self.scale
                 output_start_y = input_start_y * self.scale
                 output_end_y = input_end_y * self.scale
 
-                # output tile area without padding
+                # output tile area without padding | 输出不带填充的瓦片区域
                 output_start_x_tile = (input_start_x - input_start_x_pad) * self.scale
                 output_end_x_tile = output_start_x_tile + input_tile_width * self.scale
                 output_start_y_tile = (input_start_y - input_start_y_pad) * self.scale
                 output_end_y_tile = output_start_y_tile + input_tile_height * self.scale
 
-                # put tile into output image
+                # put tile into output image | 把瓦片放进输出图片
                 self.output[:, :, output_start_y:output_end_y,
                             output_start_x:output_end_x] = output_tile[:, :, output_start_y_tile:output_end_y_tile,
                                                                        output_start_x_tile:output_end_x_tile]
 
     def post_process(self):
-        # remove extra pad
+        # remove extra pad | 去除多余的填充
         if self.mod_scale is not None:
             _, _, h, w = self.output.size()
             self.output = self.output[:, :, 0:h - self.mod_pad_h * self.scale, 0:w - self.mod_pad_w * self.scale]
-        # remove prepad
+        # remove prepad | 移除预填充
         if self.pre_pad != 0:
             _, _, h, w = self.output.size()
             self.output = self.output[:, :, 0:h - self.pre_pad * self.scale, 0:w - self.pre_pad * self.scale]
@@ -165,6 +168,7 @@ class RealESRGANer():
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         # ------------------- process image (without the alpha channel) ------------------- #
+        # --------------------处理图像（没有Alpha透明度通道） ------------------------------- #
         self.pre_process(img)
         if self.tile_size > 0:
             self.tile_process()
@@ -177,6 +181,7 @@ class RealESRGANer():
             output_img = cv2.cvtColor(output_img, cv2.COLOR_BGR2GRAY)
 
         # ------------------- process the alpha channel if necessary ------------------- #
+        # ------------------- 必要的时候处理Alpha通道 ------------------------------------ #
         if img_mode == 'RGBA':
             if alpha_upsampler == 'realesrgan':
                 self.pre_process(alpha)
@@ -192,11 +197,12 @@ class RealESRGANer():
                 h, w = alpha.shape[0:2]
                 output_alpha = cv2.resize(alpha, (w * self.scale, h * self.scale), interpolation=cv2.INTER_LINEAR)
 
-            # merge the alpha channel
+            # merge the alpha channel | 合并Alpha通道
             output_img = cv2.cvtColor(output_img, cv2.COLOR_BGR2BGRA)
             output_img[:, :, 3] = output_alpha
 
         # ------------------------------ return ------------------------------ #
+        # ------------------------------- 返回 ------------------------------- #
         if max_range == 65535:  # 16-bit image
             output = (output_img * 65535.0).round().astype(np.uint16)
         else:
