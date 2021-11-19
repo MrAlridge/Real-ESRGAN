@@ -32,27 +32,27 @@
 #### Step 1: [可选的] 生成多尺度的图像
 
 对于DF2K数据集,我们使用多尺度策略, *i.e.*, we downsample HR images to obtain several Ground-Truth images with different scales. `<br>`
-You can use the [scripts/generate_multiscale_DF2K.py](scripts/generate_multiscale_DF2K.py) script to generate multi-scale images. `<br>`
-Note that this step can be omitted if you just want to have a fast try.
+你可以使用[scripts/generate_multiscale_DF2K.py](scripts/generate_multiscale_DF2K.py)脚本来生成多尺度图像. `<br>`
+如果你只想快点试试的话这一步可以省略.
 
 ```bash
 python scripts/generate_multiscale_DF2K.py --input datasets/DF2K/DF2K_HR --output datasets/DF2K/DF2K_multiscale
 ```
 
-#### Step 2: [Optional] Crop to sub-images
+#### Step 2: [可选的] 裁切成子图像
 
-We then crop DF2K images into sub-images for faster IO and processing.`<br>`
-This step is optional if your IO is enough or your disk space is limited.
+我们把DF2K图片裁切成子图片来提高读写和处理的速度.`<br>`
+如果你的读写速度足够或者磁盘空间受限，这一步也是可选的.
 
-You can use the [scripts/extract_subimages.py](scripts/extract_subimages.py) script. Here is the example:
+你可以使用 [scripts/extract_subimages.py](scripts/extract_subimages.py) 脚本. 以下是使用例子:
 
 ```bash
  python scripts/extract_subimages.py --input datasets/DF2K/DF2K_multiscale --output datasets/DF2K/DF2K_multiscale_sub --crop_size 400 --step 200
 ```
 
-#### Step 3: Prepare a txt for meta information
+#### Step 3: 为meta信息准备一个文本
 
-You need to prepare a txt file containing the image paths. The following are some examples in `meta_info_DF2Kmultiscale+OST_sub.txt` (As different users may have different sub-images partitions, this file is not suitable for your purpose and you need to prepare your own txt file):
+你需要准备一个带着图片路径的txt文件. 下面是 `meta_info_DF2Kmultiscale+OST_sub.txt`中的一些例子(由于不同的用户可能有不同的子图像划分方式，这个文件不一定满足你的需求，你需要自己准备txt文件):
 
 ```txt
 DF2K_HR_sub/000001_s001.png
@@ -61,8 +61,8 @@ DF2K_HR_sub/000001_s003.png
 ...
 ```
 
-You can use the [scripts/generate_meta_info.py](scripts/generate_meta_info.py) script to generate the txt file. `<br>`
-You can merge several folders into one meta_info txt. Here is the example:
+你可以使用 [scripts/generate_meta_info.py](scripts/generate_meta_info.py) 脚本来生成txt文件. `<br>`
+你可以把几个目录合并成一个meta-info文件. Here is the example:
 
 ```bash
  python scripts/generate_meta_info.py --input datasets/DF2K/DF2K_HR, datasets/DF2K/DF2K_multiscale --root datasets/DF2K, datasets/DF2K --meta_info datasets/DF2K/meta_info/meta_info_DF2Kmultiscale.txt
