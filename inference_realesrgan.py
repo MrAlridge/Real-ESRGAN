@@ -54,6 +54,7 @@ def main():
         pre_pad=args.pre_pad,
         half=args.half)
 
+    # 有面部增强参数时的操作
     if args.face_enhance:
         from gfpgan import GFPGANer
         face_enhancer = GFPGANer(
@@ -61,7 +62,7 @@ def main():
             upscale=args.outscale,
             arch='clean',
             channel_multiplier=2,
-            bg_upsampler=upsampler)
+            bg_upsampler=upsampler)                                             # 基础的升采样对象
     os.makedirs(args.output, exist_ok=True)
 
     if os.path.isfile(args.input):
@@ -73,7 +74,7 @@ def main():
         imgname, extension = os.path.splitext(os.path.basename(path))
         print('Testing', idx, imgname)
 
-        img = cv2.imread(path, cv2.IMREAD_UNCHANGED)
+        img = cv2.imread(path, cv2.IMREAD_UNCHANGED)                            # 使用OpenCV2中的imread方法读取图片
         if len(img.shape) == 3 and img.shape[2] == 4:
             img_mode = 'RGBA'
         else:
@@ -100,7 +101,7 @@ def main():
                 extension = extension[1:]
             else:
                 extension = args.ext
-            if img_mode == 'RGBA':  # RGBA images should be saved in png format
+            if img_mode == 'RGBA':  # 带Alpha通道的图像应以png格式保存
                 extension = 'png'
             save_path = os.path.join(args.output, f'{imgname}_{args.suffix}.{extension}')
             cv2.imwrite(save_path, output)

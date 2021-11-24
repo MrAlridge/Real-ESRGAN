@@ -14,15 +14,15 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 class RealESRGANer():
 
     def __init__(self, scale, model_path, model=None, tile=0, tile_pad=10, pre_pad=10, half=False):
-        self.scale = scale
-        self.tile_size = tile
-        self.tile_pad = tile_pad
-        self.pre_pad = pre_pad
-        self.mod_scale = None
-        self.half = half
+        self.scale = scale              # 放大倍数
+        self.tile_size = tile           # 图块大小
+        self.tile_pad = tile_pad        # 图块填充
+        self.pre_pad = pre_pad          # 预填充
+        self.mod_scale = None           # 修改放大
+        self.half = half                #
 
         # initialize model | 初始化模型
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')      # 计算使用的硬件是CPU还是GPU
         if model is None:
             model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=scale)
 
@@ -47,10 +47,10 @@ class RealESRGANer():
         if self.half:
             self.img = self.img.half()
 
-        # pre_pad
+        # pre_pad | 预填充
         if self.pre_pad != 0:
             self.img = F.pad(self.img, (0, self.pre_pad, 0, self.pre_pad), 'reflect')
-        # mod pad
+        # mod pad | 修改填充
         if self.scale == 2:
             self.mod_scale = 2
         elif self.scale == 1:
@@ -143,20 +143,20 @@ class RealESRGANer():
         return self.output
 
     @torch.no_grad()
-    def enhance(self, img, outscale=None, alpha_upsampler='realesrgan'):
+    def enhance(self, img, outscale=None, alpha_upsampler='realesrgan'):        # 使用这个函数来开始采样操作
         h_input, w_input = img.shape[0:2]
         # img: numpy
         img = img.astype(np.float32)
-        if np.max(img) > 256:  # 16-bit image
+        if np.max(img) > 256:  # 16位图像
             max_range = 65535
             print('\tInput is a 16-bit image')
         else:
             max_range = 255
         img = img / max_range
-        if len(img.shape) == 2:  # gray image
+        if len(img.shape) == 2:  # 灰度图
             img_mode = 'L'
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
-        elif img.shape[2] == 4:  # RGBA image with alpha channel
+        elif img.shape[2] == 4:  # 带Alpha通道的RGB图像
             img_mode = 'RGBA'
             alpha = img[:, :, 3]
             img = img[:, :, 0:3]
